@@ -1,0 +1,116 @@
+Vm설치 https://m.blog.naver.com/hirit808/221710028057
+﻿
+sudo add-apt-repository ppa:webupd8team/java 
+sudo apt update
+sudo apt install openjdk-8-jre-headless
+
+
+﻿wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.6.2.deb
+sudo dpkg -i elasticsearch-6.6.2.deb
+
+sudo systemctl enable elasticsearch.service﻿
+sudo systemctl start elasticsearch.service
+sudo systemctl status elasticsearch.service
+
+
+﻿apt install curl 
+sudo curl -X GET "localhost:9200/" //기본포트 변경하는게 보안상 좋다
+
+wget https://artifacts.elastic.co/downloads/kibana/kibana-6.6.2-amd64.deb 
+sudo dpkg -i kibana-6.6.2-amd64.deb
+
+
+sudo systemctl enable kibana.service
+sudo systemctl start kibana.service
+sudo systemctl status kibana.service
+
+
+curl -v [Log 수집 서버 IP]:5601 // 포트 변경하는게 보안상 좋다 한대의 서버에 깔았기때문에 로컬
+
+
+wget https://artifacts.elastic.co/downloads/logstash/logstash-6.6.2.deb
+sudo dpkg -i logstash-6.6.2.deb
+
+sudo systemctl enable logstash.service 
+sudo systemctl start logstash.service 
+sudo systemctl status logstash.service
+
+
+wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.3.2-amd64.deb 
+sudo dpkg -i filebeat-7.3.2-amd64.deb
+
+sudo systemctl enable filebeat.service
+sudo systemctl start filebeat.service 
+sudo systemctl status filebeat.service
+
+
+실습 
+https://github.com/minsuk-heo/BigData
+
+-XGET 조회
+curl -XGET http://localhost:9200/classes?pretty --> classes라는 index 조회 pretty라는 명령어를 통해 json형태로 출력
+
+-XPUT index 생성
+curl -XPUT http://localhost:9200/classes
+
+-XDELETE index 지우기
+curl -XDELETE http://localhost:9200/classes
+
+-XPOST document 만들기
+curl -XPOST http://localhost:9200/classes/class/1/ -H 'Content-Type:application/json' -d '
+{"title" : "Algorithm", "professor" : "John"}'
+
+Or 
+
+curl -XPOST http://localhost:9200/classes/class/1/ -H 'Content-Type:application/json' -d @oneclass.json // d 뒤에 파일 이름
+
+Update 
+curl -XPOST http://localhost:9200/classes/class/1/_update -H 'Content-Type:application/json' -d '
+{ "doc" : {"unit" : 1} }'
+
+Or 
+
+curl -XPOST http://localhost:9200/classes/class/1/_update -H 'Content-Type:application/json' -d '
+{ "script" : "ctx._source.unit += 5" }'
+
+Bulk file post
+curl -XPOST http://localhost:9200/_bulk?pretty -H 'Content-Type:application/json' --data-binary @classes.json
+확인
+curl -XGET http://localhost:9200/classes/class/몇번째?pretty
+
+Mapping
+curl -XPUT 'http://localhost:9200/classes/class/_mapping' -H 'Content-Type:application/json' -d @classesRating_mapping.json
+
+Elastic 6.x 부터 string이 아니라 text로 사용해야함
+
+
+Simple basketball.json
+Points가 30인 것만 찾기
+curl -XGET 'localhost:9200/basketball/record/_search?q=points:30&pretty'
+
+-d랑 -H랑 세트인듯
+curl -XGET localhost:9200/basketball/record/_search?pretty -H 'Content-Type:application/json' -d '
+{           
+ "query" : {
+     "term" : { "points" : 30 }
+  }
+}'
+
+Avg_points_aggs.json을 보면 points의 avg값을 구하라 함
+curl -XGET localhost:9200/_search?pretty -H 'Content-Type:application/json' --data-binary @avg_points_aggs.json
+@max.json
+@min.json…
+
+stats 사용하면 count, min, max, avg, sum 값 다 구해줌
+
+curl -XGET Localhost:9200/_search?pretty -H 'Content-Type:application/json' --data-binary @stats_team.json
+bucket_aggregation 자주 쓰일 듯 
+
+
+Logstash는 input을 담당 (java필요)
+Log, input을 변환시켜서 elasticsearch로 전달(logstash가 원하는 형태로 데이터를 변환ex) csv를 text로)
+
+sudo ./logstash -f logstash-simple.conf
+Logstash.conf에 input, filter, output 설정
+
+/Downloads/BigData-master
